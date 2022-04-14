@@ -1,0 +1,40 @@
+<mat-toolbar>
+    <div class="navbar">
+      <div class="login">
+        <ng-container *ngIf="!!loggedIn">
+          <div *ngIf="!!image" class="image" [ngStyle]="{'background-image':'url('+image+')'}"></div>
+          <span *ngIf="!!name" class="display-name">hey {{ name }}</span> |
+          <span class="logout" (click)="logout()">logout</span>
+        </ng-container>
+
+        <ng-container *ngIf="!loggedIn">
+          <a class="nav-link" [routerLink]="'/login'">login</a>
+          <mat-icon>account_box</mat-icon>
+        </ng-container>
+      </div>
+
+      <div class="navbar-links">
+        <ul>
+          <ng-container *ngIf="!!loggedIn">
+            <li>
+              <a [routerLink]="'/dashboard'">dashboard</a>
+            </li>
+            <li>
+                <a [routerLink]="'/profile'">profile</a>
+            </li>
+            <li>
+              <a [routerLink]="'/warning-notifications/history'">warning notifications history</a>
+            </li>
+            <li>
+              <a [routerLink]="'/warning-notifications'">warning notifications</a>
+            </li>
+          </ng-container>
+        </ul>
+      </div>
+
+      <div class="logo">
+        <img [src]="logo" class="logo-img" [routerLink]="'/home'" />
+      </div>
+    </div>
+
+</mat-toolbar>

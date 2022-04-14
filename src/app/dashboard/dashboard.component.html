@@ -1,0 +1,36 @@
+<app-toolbar></app-toolbar>
+
+<div class="main-section" [@fadeInOnEnter] [@fadeOutOnLeave]>
+    <header class="dashboard__header">
+        <h1 class="dashboard__header-title">Hacker News Dashboard</h1>
+
+        <mat-form-field class="date-range">
+        
+        <mat-label>Enter a date range</mat-label>
+
+        <mat-date-range-input [formGroup]="dateRange" [rangePicker]="picker">
+            <input matStartDate formControlName="start" placeholder="Start date">
+            <input matEndDate formControlName="end" placeholder="End date">
+        </mat-date-range-input>
+
+        <mat-hint>MM/DD/YYYY – MM/DD/YYYY</mat-hint>
+
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+
+        <mat-date-range-picker #picker></mat-date-range-picker>
+
+        <mat-error *ngIf="dateRange.controls.start.hasError('matStartDateInvalid')">Invalid start date</mat-error>
+        <mat-error *ngIf="dateRange.controls.end.hasError('matEndDateInvalid')">Invalid end date</mat-error>
+        
+        </mat-form-field>
+
+    </header>
+
+    <dashboard-counters @item class="dashboard__counters" 
+        [dateRange]="dateRange">
+    </dashboard-counters>
+
+    <div class="dashboard__graphs">
+
+    </div>
+</div>

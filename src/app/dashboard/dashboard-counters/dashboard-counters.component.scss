@@ -1,0 +1,102 @@
+:host {
+    background-color: var(--hacker-news-white);
+    border-radius: var(--border-radius-10);
+    // box-shadow: var(--box-shadow-normal);
+    font-weight: 700;
+    padding: 4rem;
+    display: grid;
+    gap: 5rem;
+}
+
+.dashboard-counters {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    flex-wrap: wrap;
+
+    &__item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+
+    }
+
+    &__item-svg-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 5rem;
+        height: 5rem;
+        border-radius: var(--border-radius-10);
+
+        &--users {
+            background: var(--hacker-news-grey-light-2);
+            fill: var(--hacker-news-grey-3);
+        }
+
+        &--stories {
+            background: var(--hacker-news-light-yellow);
+            fill: var(--hacker-news-dark-yellow-2);
+        }
+
+        &--comments {
+            background: var(--hacker-news-red-light-5);
+            fill: var(--hacker-news-red);
+        }
+    }
+
+    &__item-svg {
+        &--users {
+            width: 18px;
+            height: 21.91px;
+        }
+
+        &--stories {
+            width: 18px;
+            height: 21.06px;
+        }
+
+        &--comments {
+            width: 21.99px;
+            height: 20px;
+        }
+    }
+
+    &__item-text {
+        margin-left: 2.2rem;
+    }
+
+    &__item-count {
+        font-size: var(--font-size-32);
+        line-height: var(--line-height-sm);
+        font-weight: 700;
+        margin-bottom: 5px;
+        pointer-events: none;
+    }
+
+    &__item-description {
+        font-weight: 400;
+        line-height: var(--line-height-lg);
+    }
+
+    &__separator {
+        width: 1px;
+        height: 6.2rem;
+        background: var(--hacker-news-grey-light-2);
+        margin: 0 3.1rem 0 2.2rem;
+    }
+
+    &__graph {
+        canvas {
+            height: 300px;
+        }
+    }
+}
+
+.suspicious-users-table {
+    margin: 5rem 0;
+
+    .title {
+        margin-bottom: 2rem !important;
+    }
+}

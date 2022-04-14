@@ -1,0 +1,81 @@
+<app-toolbar></app-toolbar>
+
+<div class="main-section" [@fadeInOnEnter] [@fadeOutOnLeave]>
+
+  <div class="flex-container" [class.flex]="!!disabledFlag">
+    <div class="flex-container--right">
+      <h1>{{disabledFlag ? admin.name : 'my profile'}}</h1>
+      
+      <section class="form">
+        <div class="inputs-container">
+          <form *ngIf="!!form" [formGroup]="form" autocomplete="new-phone" novalidate fxLayout="column wrap"
+            fxLayoutAlign="center center" fxLayoutGap="10px">
+      
+            <div class="form-field">
+              <div class="profile-image" [ngStyle]="{'background-image':'url('+form.controls['photo'].value+')'}"></div>
+              <ng-container *ngIf="!disabledFlag">
+                <span>pick an image</span>
+                <input type="file" placeholder="pick an image" (change)="onImageChange($event)" accept="image/*">
+              </ng-container>
+            </div>
+      
+            <div class="form-inputs-wrapper">
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="text" placeholder="username" formControlName="username" required>
+              </mat-form-field>
+      
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="password" placeholder="password" formControlName="password" required>
+                <mat-error *ngIf="hasError('password', 'required')">password is required</mat-error>
+              </mat-form-field>
+      
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="text" placeholder="name" formControlName="name" required>
+                <mat-error *ngIf="hasError('name', 'required')">name is required</mat-error>
+              </mat-form-field>
+      
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="email" placeholder="email" formControlName="email" required>
+                <mat-error *ngIf="hasError('email', 'required')">email is required</mat-error>
+                <mat-error *ngIf="hasError('email', 'email')">email is invalid</mat-error>
+              </mat-form-field>
+      
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="tel" placeholder="phone" formControlName="phone" required>
+                <mat-error *ngIf="hasError('phone', 'required')">phone is required</mat-error>
+              </mat-form-field>
+      
+              <mat-form-field>
+                <input autocomplete="new-phone" matInput type="text" placeholder="city" formControlName="city" id="city" required>
+                <mat-error *ngIf="hasError('city', 'required')">city is required</mat-error>
+              </mat-form-field>
+      
+              <div class="inner-grid">
+                <mat-form-field>
+                  <input autocomplete="new-phone" matInput type="text" placeholder="address" formControlName="address" id="address" required>
+                  <mat-error *ngIf="hasError('address', 'required')">address is required</mat-error>
+                </mat-form-field>
+      
+                <mat-form-field>
+                  <input autocomplete="new-phone" matInput type="number" placeholder="number" formControlName="addressNumber"
+                    id="addressNumber" required>
+                  <mat-error *ngIf="hasError('addressNumber', 'required')">number is required</mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </form>
+      
+          <button *ngIf="!disabledFlag" class="submit-btn" mat-raised-button (click)="submit()" color="primary"
+            [disabled]="!!form && !form.valid">
+            save
+          </button>
+        </div>
+      </section>
+    </div>
+    </div>
+    
+    </div>
+
+<mat-card *ngIf="isLoading" class="mat-progress-spinner">
+  <mat-progress-spinner color="primary" mode="indeterminate"></mat-progress-spinner>
+</mat-card>
