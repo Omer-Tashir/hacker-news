@@ -86,10 +86,14 @@
         margin: 0 3.1rem 0 2.2rem;
     }
 
-    &__graph {
-        canvas {
-            height: 300px;
-        }
+    &__graphs {
+        position: relative;
+        min-height: unset;
+        height: 600px;
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        gap: 1rem;
     }
 }
 

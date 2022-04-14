@@ -794,3 +794,7 @@ td.mat-cell {
     padding-top: calc(var(--toolbar-height) + 30px);
     margin: 0 5vw;
 }
+
+.chartjs-render-monitor {
+  height: 600px !important;
+}

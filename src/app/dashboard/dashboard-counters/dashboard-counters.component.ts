@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy, ViewChild, EventEmitter, Input, OnDestroy, AfterViewInit } from '@angular/core';
-import { filter, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { MultiDataSet, Label, PluginServiceGlobalRegistrationAndOptions, Color, BaseChartDirective } from 'ng2-charts';
+import { delay, filter, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ChartDataSets, ChartOptions, ChartType } from 'chart.js';
-import { Label, Color, BaseChartDirective } from 'ng2-charts';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormGroup } from '@angular/forms';
 import { Observable, Subject } from 'rxjs';
@@ -23,6 +23,8 @@ import { User } from 'src/app/model/user';
 })
 export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(BaseChartDirective) chart!: BaseChartDirective;
+
+  public chartPlugins = [ pluginDataLabels ];
   
   @Input()
   dateRange!: FormGroup;
@@ -34,10 +36,8 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
 
   users$!: Observable<User[]>;
   suspiciousUsers$!: Observable<SuspiciousUser[]>;
-  storyStartup$!: Observable<StoryStartup[]>;
-  commentStartup$!: Observable<CommentStartup[]>;
 
-  suspiciousUsersDisplayedColumns: string[] = ['user_name', 'start_up_name'];
+  suspiciousUsersDisplayedColumns: string[] = ['user_name', 'email', 'start_up_name'];
   suspiciousUsersDataSource!: MatTableDataSource<SuspiciousUser>;
 
   suspiciousUsersOptions: (ChartOptions) = {
@@ -139,6 +139,65 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
 
   suspiciousUsersLabels: Label[] = [];
 
+  startupsMap: Map<string, any> = new Map<string, any>();
+  startupsChartLabels: Label[] = [];
+  startupsChartData: MultiDataSet = [[]];
+  startupsChartType: ChartType = 'pie';
+  startupsChartOptions: ChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    tooltips: {
+      bodyFontSize: 14,
+      titleFontSize: 14,
+      footerFontFamily: '"Lato", sans-serif',
+      bodyFontFamily: '"Lato", sans-serif',
+      titleFontFamily: '"Lato", sans-serif',
+      displayColors: true,
+      callbacks: {
+        title: (tooltipItem: any, data: any) => {
+          return "" + data.labels[tooltipItem[0].index];
+        },
+        label: (tooltipItem: any, data: any) => {
+          return data.datasets[0].data[tooltipItem.index] + ' Users';
+        }
+      }
+    },
+    legend: {
+      display: true,
+      position: 'bottom',
+      align: 'start',
+      labels: {
+        padding: 18,
+        boxWidth: 14,
+        fontSize: 14,
+        fontColor: '#95949A',
+        fontFamily: '"Lato", sans-serif'
+      },
+    },
+    plugins: {
+      datalabels: {
+        anchor: 'center',
+        align: 'center',
+        color: '#000000',
+        font: {
+          family: '"Lato", sans-serif',
+          size: 14
+        }
+      }
+    },
+    layout: {
+      padding: {
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0
+      }
+    }
+  };
+
+  startupsChartPlugins: PluginServiceGlobalRegistrationAndOptions[] = [{}];
+  startupsChartColors: Color[] = [{ backgroundColor: [] }];
+
   countUpOptions = {
     duration: 1,
     useGrouping: true,
@@ -170,18 +229,11 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.suspiciousUsers$ = this.refresh$.pipe(
       switchMap(() => this.dataService.getSuspiciousUsers()),
       map(users => users
-          .filter(user => moment(user.identify_date)
+        .filter(user => moment(user.identify_date)
           .isBetween(moment(this.dataStartDate), moment(this.dataEndDate)))
       ),
-      tap(users => this.setSuspiciousUsersTable(users))
-    );
-
-    this.storyStartup$ = this.refresh$.pipe(
-      switchMap(() => this.dataService.getStoryStartup())
-    );
-
-    this.commentStartup$ = this.refresh$.pipe(
-      switchMap(() => this.dataService.getCommentStartup())
+      tap(users => this.setSuspiciousUsersTable(users)),
+      tap(users => this.setSuspiciousUsersPerStartup(users))
     );
 
     this.dateRange.valueChanges.pipe(
@@ -192,6 +244,10 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       }),
       takeUntil(this.destroy$)
     ).subscribe();
+  }
+
+  getUserEmail(users: User[], user_id: string): any {
+    return users?.find(user => user.user_id === user_id)?.email;
   }
 
   setSuspiciousUsersTable(users: SuspiciousUser[]): void {
@@ -226,7 +282,39 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.suspiciousUsersDataSource = new MatTableDataSource(dataSource);
   }
 
+  setSuspiciousUsersPerStartup(users: SuspiciousUser[]): void {
+    let startupCountMap = new Map<string, number>();
+    for (let user of users) {
+      if (startupCountMap.has(user.start_up_name)) {
+        const userCount: number = startupCountMap.get(user.start_up_name) ?? 0;
+        startupCountMap.set(user.start_up_name, userCount + 1);
+      }
+      else {
+        startupCountMap.set(user.start_up_name, 1);
+      }
+    }
+
+    for (let [startup, count] of startupCountMap.entries()) {
+      if (count > 0) {
+        this.startupsMap.set(startup, {color: this.getRandomColor(), value: count})
+      }
+    }
+
+    this.startupsChartData[0] = Array.from(this.startupsMap.values()).map(a => a.value);
+    this.startupsChartLabels = Array.from(this.startupsMap.keys());
+    this.startupsChartColors[0].backgroundColor = Array.from(this.startupsMap.values()).map(a => a.color);
+  }
+
+  private getRandomColor(): string {
+    return `#${Math.floor(Math.random() * 16777215).toString(16)}90`;
+  }
+
   ngAfterViewInit(): void {
+    this.refresh$.pipe(
+      tap(() => this.chart.chart.resize()),
+      takeUntil(this.destroy$)
+    ).subscribe();
+
     this.refresh$.next();
   }
 

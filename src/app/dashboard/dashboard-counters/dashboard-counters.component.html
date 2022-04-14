@@ -16,20 +16,34 @@
         
     </div>
 
-    <div class="dashboard-counters__graph">
-        <h2 class="title">% of suspicious Users per Startup</h2>
-
-        <canvas baseChart
-                [datasets]="suspiciousUsersData"
-                [labels]="suspiciousUsersLabels"
-                [options]="suspiciousUsersOptions"
-                [colors]="suspiciousUsersColors" 
-                [legend]="suspiciousUsersLegend" 
-                [chartType]="suspiciousUsersType">
-        </canvas>
+    <div class="dashboard-counters__graphs">
+        <div class="dashboard-counters__graph">
+            <h2 class="title">% of suspicious Users per Startup</h2>
+    
+            <canvas baseChart height="250"
+                    [datasets]="suspiciousUsersData"
+                    [labels]="suspiciousUsersLabels"
+                    [options]="suspiciousUsersOptions"
+                    [colors]="suspiciousUsersColors" 
+                    [legend]="suspiciousUsersLegend" 
+                    [chartType]="suspiciousUsersType">
+            </canvas>
+        </div>
+    
+        <div class="dashboard-counters__graph">
+            <h2 class="title">% of suspicious Users per Startup</h2>
+    
+            <canvas baseChart height="250"
+                    [data]="startupsChartData"
+                    [labels]="startupsChartLabels"
+                    [options]="startupsChartOptions"
+                    [colors]="startupsChartColors" 
+                    [chartType]="startupsChartType">
+            </canvas>
+        </div>
     </div>
 
-    <div class="suspicious-users-table">
+    <div class="suspicious-users-table" *ngIf="(users$ | async) as users">
 
         <h2 class="title">Top 10 Suspicious Users</h2>
 
@@ -38,6 +52,11 @@
             <ng-container matColumnDef="user_name">
                 <th mat-header-cell *matHeaderCellDef> User Name </th>
                 <td mat-cell *matCellDef="let row"> {{row.user_name}} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="email">
+                <th mat-header-cell *matHeaderCellDef> Email </th>
+                <td mat-cell *matCellDef="let row"> {{getUserEmail(users, row.user_name)}} </td>
             </ng-container>
         
             <ng-container matColumnDef="start_up_name">
