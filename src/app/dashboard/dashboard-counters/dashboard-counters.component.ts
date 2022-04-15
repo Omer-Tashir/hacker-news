@@ -1,6 +1,6 @@
-import { Component, OnInit, ChangeDetectionStrategy, ViewChild, EventEmitter, Input, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, ViewChild, EventEmitter, Input, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { MultiDataSet, Label, PluginServiceGlobalRegistrationAndOptions, Color, BaseChartDirective } from 'ng2-charts';
-import { delay, filter, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { delay, filter, finalize, first, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ChartDataSets, ChartOptions, ChartType } from 'chart.js';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormGroup } from '@angular/forms';
@@ -14,6 +14,9 @@ import { DataService } from 'src/app/services/data-service';
 import { StoryStartup } from 'src/app/model/story-startup';
 import { CommentStartup } from 'src/app/model/comment-startup';
 import { User } from 'src/app/model/user';
+import { Algorithem } from 'src/app/services/algorithem';
+import { MatSort } from '@angular/material/sort';
+import { MatPaginator } from '@angular/material/paginator';
 
 @Component({
   selector: 'dashboard-counters',
@@ -23,6 +26,19 @@ import { User } from 'src/app/model/user';
 })
 export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild(BaseChartDirective) chart!: BaseChartDirective;
+
+  sort!: MatSort;
+  paginator!: MatPaginator;
+
+  @ViewChild(MatSort) set matSort(ms: MatSort) {
+    this.sort = ms;
+    this.setDataSourceAttributes();
+  }
+
+  @ViewChild(MatPaginator) set matPaginator(mp: MatPaginator) {
+      this.paginator = mp;
+      this.setDataSourceAttributes();
+  }
 
   public chartPlugins = [ pluginDataLabels ];
   
@@ -34,11 +50,14 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   private refresh$ = new Subject<{}>();
   private destroy$ = new Subject<void>();
 
-  users$!: Observable<User[]>;
+  userFullDetailsMap = new Map<string, any>();
   suspiciousUsers$!: Observable<SuspiciousUser[]>;
+  suspiciousUsersPrecentege: number = 0;
+  suspiciousStoriesPrecentege: number = 0;
+  suspiciousCommentsPrecentege: number = 0;
 
   suspiciousUsersDisplayedColumns: string[] = ['user_name', 'email', 'start_up_name'];
-  suspiciousUsersDataSource!: MatTableDataSource<SuspiciousUser>;
+  suspiciousUsersDataSource: MatTableDataSource<SuspiciousUser> = new MatTableDataSource<SuspiciousUser>([]);
 
   suspiciousUsersOptions: (ChartOptions) = {
     responsive: true,
@@ -55,7 +74,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       displayColors: false,
       callbacks: {
         label: (data) => {
-          return data.value + ' Requests';
+          return data.value + ' Users';
         }
       }
     },
@@ -209,31 +228,41 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     ...this.countUpOptions
   };
 
-  countUpOptionsAvg = {
+  countUpOptionsPrecentege = {
     decimalPlaces: 1,
-    ...this.countUpOptions
+    ...this.countUpOptions,
+    formattingFn: (n: number) => `${n}%` 
   };
 
   constructor(
-    private dataService: DataService
+    private algorithem: Algorithem,
+    private dataService: DataService,
+    private cdref: ChangeDetectorRef
   ) { }
+
+  setDataSourceAttributes() {
+    this.suspiciousUsersDataSource.paginator = this.paginator;
+    this.suspiciousUsersDataSource.sort = this.sort;
+  }
 
   ngOnInit(): void {
     this.dataStartDate = this.dateRange.get('start')?.value.toDate();
     this.dataEndDate = this.dateRange.get('end')?.value.toDate();
 
-    this.users$ = this.refresh$.pipe(
-      switchMap(() => this.dataService.getUsers())
-    );
-
+    let allUsers: SuspiciousUser[] = [];
     this.suspiciousUsers$ = this.refresh$.pipe(
       switchMap(() => this.dataService.getSuspiciousUsers()),
+      tap(users => allUsers = users),
       map(users => users
         .filter(user => moment(user.identify_date)
           .isBetween(moment(this.dataStartDate), moment(this.dataEndDate)))
       ),
+      tap(() => this.cleanCharts()),
+      tap(users => this.getUsersFullDetails(users)),
       tap(users => this.setSuspiciousUsersTable(users)),
-      tap(users => this.setSuspiciousUsersPerStartup(users))
+      tap(users => this.setSuspiciousUsersPerStartup(users)),
+      tap(users => this.setSuspiciousUsersPerStartupByDateRange(users)),
+      tap(users => this.runAlgorithem(allUsers, users))
     );
 
     this.dateRange.valueChanges.pipe(
@@ -242,12 +271,48 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
         this.dataEndDate = date.end ? date.end.toDate() : date.start.toDate();
         this.refresh$.next();
       }),
-      takeUntil(this.destroy$)
+      takeUntil(this.destroy$),
+      finalize(() => this.cdref.detectChanges())
     ).subscribe();
   }
 
-  getUserEmail(users: User[], user_id: string): any {
-    return users?.find(user => user.user_id === user_id)?.email;
+  private getUsersFullDetails(suspiciousUsers: SuspiciousUser[]): void {
+    this.dataService.getUsers().pipe(
+      first(),
+      map(users => users.filter(u => suspiciousUsers.map(su => su.user_name).includes(u.user_id))),
+      tap(users => users.forEach(u => {
+        this.userFullDetailsMap.set(u.user_id, u.email);
+      })),
+      finalize(() => this.cdref.detectChanges())
+    ).subscribe();
+  }
+
+  private runAlgorithem(allUsers: SuspiciousUser[], users: SuspiciousUser[]): void {
+    this.algorithem.getSuspiciousCommentsPrecentege(users).pipe(
+      tap(num => this.suspiciousCommentsPrecentege = num),
+      finalize(() => this.cdref.detectChanges())
+    ).subscribe();
+
+    this.algorithem.getSuspiciousStoriesPrecentege(users).pipe(
+      tap(num => this.suspiciousStoriesPrecentege = num),
+      finalize(() => this.cdref.detectChanges())
+    ).subscribe();
+
+    this.algorithem.getSuspiciousUsersPrecentege(allUsers, users).pipe(
+      tap(num => this.suspiciousUsersPrecentege = num),
+      finalize(() => this.cdref.detectChanges())
+    ).subscribe();
+  }
+
+  private cleanCharts(): void {
+    this.startupsChartPlugins = [{}];
+    this.startupsChartColors = [{ backgroundColor: [] }];
+    this.startupsChartData = [[]];
+    this.startupsChartLabels = [];
+    this.startupsMap = new Map<string, any>();
+    this.suspiciousUsersLabels = [];
+    this.suspiciousUsersData[0].data = [];
+    this.suspiciousUsersDataSource.data = [];
   }
 
   setSuspiciousUsersTable(users: SuspiciousUser[]): void {
@@ -269,7 +334,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     }, new Map()).values()];
 
     // sort users by count of apperance
-    usersCountMap = new Map([...usersCountMap].sort((a, b) => b[1] - a[1]).slice(0, 10));
+    usersCountMap = new Map([...usersCountMap].sort((a, b) => b[1] - a[1]).slice(0, this.paginator?.pageSize));
 
     let dataSource: SuspiciousUser[] = [];
     for (let username of usersCountMap.keys()) {
@@ -279,7 +344,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       }
     }
 
-    this.suspiciousUsersDataSource = new MatTableDataSource(dataSource);
+    this.suspiciousUsersDataSource.data = dataSource;
   }
 
   setSuspiciousUsersPerStartup(users: SuspiciousUser[]): void {
@@ -305,14 +370,36 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.startupsChartColors[0].backgroundColor = Array.from(this.startupsMap.values()).map(a => a.color);
   }
 
+  setSuspiciousUsersPerStartupByDateRange(users: SuspiciousUser[]): void {
+    var a = moment(this.dataStartDate);
+    var b = moment(this.dataEndDate);
+    const daysDiff = Math.abs(b.diff(a, 'days'));
+    const points = 12;
+
+    let startupCountMap = new Map<string, number>(); // date range, count
+
+    for (let i = 1; i <= points; i++) {
+      const fromDate = moment(this.dataStartDate).add(((daysDiff / points) * (i-1)), 'days');
+      const toDate = moment(this.dataStartDate).add(((daysDiff / points) * i), 'days');
+
+      let usersArrPerRange = users.filter(user => moment(user.identify_date)
+          .isBetween(fromDate, toDate))
+
+      startupCountMap.set(fromDate.format('DD/MM/YY'), usersArrPerRange.length);
+    }
+
+    this.suspiciousUsersLabels = Array.from(startupCountMap.keys());
+    this.suspiciousUsersData[0].data = this.suspiciousUsersLabels.map(key => startupCountMap.get("" + key));
+  }
+
   private getRandomColor(): string {
     return `#${Math.floor(Math.random() * 16777215).toString(16)}90`;
   }
 
   ngAfterViewInit(): void {
     this.refresh$.pipe(
-      tap(() => this.chart.chart.resize()),
-      takeUntil(this.destroy$)
+      takeUntil(this.destroy$),
+      finalize(() => this.cdref.detectChanges())
     ).subscribe();
 
     this.refresh$.next();

@@ -10,9 +10,10 @@
 
 .dashboard-counters {
     display: flex;
-    justify-content: left;
+    justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 25px;
 
     &__item {
         display: flex;
@@ -34,6 +35,11 @@
             fill: var(--hacker-news-grey-3);
         }
 
+        &--users-trend {
+            background: var(--hacker-news-blue-light);
+            fill: var(--hacker-news-blue);
+        }
+
         &--stories {
             background: var(--hacker-news-light-yellow);
             fill: var(--hacker-news-dark-yellow-2);
@@ -47,6 +53,11 @@
 
     &__item-svg {
         &--users {
+            width: 18px;
+            height: 21.91px;
+        }
+
+        &--users-trend {
             width: 18px;
             height: 21.91px;
         }
@@ -83,24 +94,19 @@
         width: 1px;
         height: 6.2rem;
         background: var(--hacker-news-grey-light-2);
-        margin: 0 3.1rem 0 2.2rem;
+        margin: 0 2rem;
     }
 
     &__graphs {
         position: relative;
-        min-height: unset;
-        height: 600px;
+        min-height: 700px;
         display: flex;
         flex-wrap: wrap;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 2rem;
     }
 }
 
-.suspicious-users-table {
-    margin: 5rem 0;
-
-    .title {
-        margin-bottom: 2rem !important;
-    }
+.title {
+    margin-bottom: 2rem !important;
 }
