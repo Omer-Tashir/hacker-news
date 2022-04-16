@@ -58,6 +58,7 @@ import { ProfileComponent } from './profile/profile.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { WarningNotificationsComponent } from './warning-notifications/warning-notifications.component';
 import { DashboardCountersComponent } from './dashboard/dashboard-counters/dashboard-counters.component';
+import { WarningNotificationsHistoryComponent } from './warning-notifications-history/warning-notifications-history.component';
 
 const CUSTOM_DATE_FORMAT = {
   parse: {
@@ -98,6 +99,7 @@ const DEFAULT_SWIPER_CONFIG: SwiperConfigInterface = {
     WarningNotificationsComponent,
     DashboardComponent,
     DashboardCountersComponent,
+    WarningNotificationsHistoryComponent,
   ],
   imports: [
     CommonModule,

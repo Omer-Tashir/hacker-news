@@ -371,7 +371,7 @@ button[mat-button],
 .mat-raised-button.mat-primary {
   border-bottom: 4px solid #d87420;
   box-sizing: border-box;
-  font-size: 18px;
+  font-size: 16px;
   color: white;
   background-color: #f68424;
   font-weight: 700;
@@ -482,7 +482,7 @@ input[readonly="true"] {
 
 .mat-snack-bar-container .mat-dialog-title {
   color: rgb(38, 38, 38) !important;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .mat-snack-bar-container .alert-footer,
@@ -565,7 +565,7 @@ mat-sidenav {
 
 .mat-step-header .mat-step-label {
   font-weight: 100;
-  font-size: 18px;
+  font-size: 16px;
   color: #9e9e9e;
   width: 100%;
 }
@@ -598,7 +598,7 @@ table tr {
 th.mat-header-cell,
 td.mat-cell {
   font-weight: 100;
-  font-size: 18px;
+  font-size: 16px;
   text-align: left;
   padding: 0 15px !important;
 }
@@ -625,7 +625,7 @@ td.mat-cell {
   box-sizing: border-box;
   cursor: move;
   background: transparent;
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .drag-and-drop-container-box {
@@ -659,7 +659,7 @@ td.mat-cell {
   box-sizing: border-box;
   cursor: grab;
   background: transparent;
-  font-size: 18px;
+  font-size: 16px;
   list-style: none;
 }
 
@@ -679,7 +679,7 @@ td.mat-cell {
 }
 
 .drag-and-drop-title {
-  font-size: 17px;
+  font-size: 15px;
   color: #313448;
 }
 
@@ -717,7 +717,7 @@ td.mat-cell {
 .mat-tooltip {
   color: rgb(38, 38, 38);
   text-shadow: 0 0 3px #313448;
-  font-size: 18px;
+  font-size: 16px;
   padding-top: 6px;
   padding-bottom: 6px;
 }
@@ -725,7 +725,7 @@ td.mat-cell {
 .mat-tooltip-handset {
   color: rgb(38, 38, 38);
   text-shadow: 0 0 3px #313448;
-  font-size: 18px;
+  font-size: 16px;
   padding-top: 8px;
   padding-bottom: 8px;
 }
@@ -797,4 +797,16 @@ td.mat-cell {
 
 .chartjs-render-monitor {
   height: 600px !important;
+}
+
+.warning_type {
+    font-size: 15px;
+    font-weight: bold;
+    color: #f44336;
+}
+
+.warning_text {
+    display: block;
+    font-size: 14px;
+    font-weight: 400;
 }

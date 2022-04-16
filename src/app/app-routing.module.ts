@@ -7,6 +7,7 @@ import { ProfileComponent } from './profile/profile.component';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { HomeComponent } from './home/home.component';
 import { WarningNotificationsComponent } from './warning-notifications/warning-notifications.component';
+import { WarningNotificationsHistoryComponent } from './warning-notifications-history/warning-notifications-history.component';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },
@@ -15,7 +16,7 @@ const routes: Routes = [
   { path: 'home', component: HomeComponent, canActivate: [isLoggedInGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [isLoggedInGuard] },
   { path: 'warning-notifications', component: WarningNotificationsComponent, canActivate: [isLoggedInGuard] },
-  { path: 'warning-notifications/history', component: WarningNotificationsComponent, canActivate: [isLoggedInGuard] },
+  { path: 'warning-notifications/history', component: WarningNotificationsHistoryComponent, canActivate: [isLoggedInGuard] },
 ];
 
 @NgModule({
