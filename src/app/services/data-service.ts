@@ -11,6 +11,7 @@ import { CommentStartup } from "../model/comment-startup";
 import { SuspiciousUser } from "../model/suspicious-user";
 import { WarningNotification } from "../model/warning-notification";
 import { WarningNotificationType } from "../model/warning-notification-type";
+import { ActiveUser } from "../model/active-user";
 
 @Injectable({
     providedIn: 'root',
@@ -54,6 +55,12 @@ export class DataService {
     getSuspiciousUsers(): Observable<SuspiciousUser[]> {
         return this.http.get(`http://localhost/hacker-news/get_suspicious_users.php`).pipe(
             map((result: any) => result as SuspiciousUser[])
+        );
+    }
+
+    getActiveUsers(): Observable<ActiveUser[]> {
+        return this.http.get(`http://localhost/hacker-news/get_active_users.php`).pipe(
+            map((result: any) => result as ActiveUser[])
         );
     }
 

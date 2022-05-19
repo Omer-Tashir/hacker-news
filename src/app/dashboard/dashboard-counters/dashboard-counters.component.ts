@@ -4,7 +4,7 @@ import { delay, filter, finalize, first, map, startWith, switchMap, takeUntil, t
 import { ChartDataSets, ChartOptions, ChartType } from 'chart.js';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormGroup } from '@angular/forms';
-import { Observable, Subject } from 'rxjs';
+import { combineLatest, forkJoin, Observable, Subject } from 'rxjs';
 
 import * as moment from 'moment/moment';
 import * as pluginDataLabels from 'chartjs-plugin-datalabels';
@@ -17,6 +17,7 @@ import { User } from 'src/app/model/user';
 import { Algorithem } from 'src/app/services/algorithem';
 import { MatSort } from '@angular/material/sort';
 import { MatPaginator } from '@angular/material/paginator';
+import { ActiveUser } from 'src/app/model/active-user';
 
 @Component({
   selector: 'dashboard-counters',
@@ -51,10 +52,11 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   private destroy$ = new Subject<void>();
 
   userFullDetailsMap = new Map<string, any>();
-  suspiciousUsers$!: Observable<SuspiciousUser[]>;
+  suspiciousUsers$!: Observable<any>;
   suspiciousUsersPrecentege: number = 0;
   suspiciousStoriesPrecentege: number = 0;
   suspiciousCommentsPrecentege: number = 0;
+  startupsChartDataTotalCount: number = 0;
 
   suspiciousUsersDisplayedColumns: string[] = ['user_name', 'email', 'start_up_name'];
   suspiciousUsersDataSource: MatTableDataSource<SuspiciousUser> = new MatTableDataSource<SuspiciousUser>([]);
@@ -143,6 +145,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   ];
 
   suspiciousUsersLegend = false;
+  suspiciousUsersDataTotal: any = 0;
   suspiciousUsersType: ChartType = 'line';
   suspiciousUsersData: ChartDataSets[] = [{
     data: [],
@@ -161,10 +164,11 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   startupsMap: Map<string, any> = new Map<string, any>();
   startupsChartLabels: Label[] = [];
   startupsChartData: MultiDataSet = [[]];
-  startupsChartType: ChartType = 'pie';
+  startupsChartType: ChartType = 'doughnut';
   startupsChartOptions: ChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    cutoutPercentage: 75,
     tooltips: {
       bodyFontSize: 14,
       titleFontSize: 14,
@@ -178,7 +182,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
         },
         label: (tooltipItem: any, data: any) => {
           return data.datasets[0].data[tooltipItem.index] + ' Users';
-        }
+        },
       }
     },
     legend: {
@@ -202,7 +206,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
           family: '"Lato", sans-serif',
           size: 14
         }
-      }
+      },
     },
     layout: {
       padding: {
@@ -249,20 +253,28 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.dataStartDate = this.dateRange.get('start')?.value.toDate();
     this.dataEndDate = this.dateRange.get('end')?.value.toDate();
 
-    let allUsers: SuspiciousUser[] = [];
     this.suspiciousUsers$ = this.refresh$.pipe(
-      switchMap(() => this.dataService.getSuspiciousUsers()),
-      tap(users => allUsers = users),
-      map(users => users
-        .filter(user => moment(user.identify_date)
-          .isBetween(moment(this.dataStartDate), moment(this.dataEndDate)))
-      ),
+      switchMap(() => forkJoin([
+        this.dataService.getActiveUsers(),
+        this.dataService.getSuspiciousUsers()
+      ])),
+      tap(data => {
+        data[0] = data[0]
+          .filter((user: ActiveUser) => moment(user.Created_Date)
+            .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), null, "[]"))
+        data[0] = this.getUniqueArrByProperty(data[0], 'user_id');
+
+        data[1] = data[1].filter((user: SuspiciousUser) => moment(user.identify_date)
+          .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), null, "[]"))
+        data[1] = this.getUniqueArrByProperty(data[1], 'user_name');
+      }),
       tap(() => this.cleanCharts()),
-      tap(users => this.getUsersFullDetails(users)),
-      tap(users => this.setSuspiciousUsersTable(users)),
-      tap(users => this.setSuspiciousUsersPerStartup(users)),
-      tap(users => this.setSuspiciousUsersPerStartupByDateRange(users)),
-      tap(users => this.runAlgorithem(allUsers, users))
+      tap((data: any) => this.getUsersFullDetails(data[1])),
+      tap((data: any)  => this.setSuspiciousUsersTable(data[1])),
+      tap((data: any)  => this.setSuspiciousUsersPerStartup(data[1])),
+      tap((data: any)  => this.setSuspiciousUsersPerStartupByDateRange(data[1])),
+      tap((data: any) => this.runAlgorithem(data[0], data[1], this.dataStartDate, this.dataEndDate)),
+      map(data => data[1]),
     );
 
     this.dateRange.valueChanges.pipe(
@@ -276,6 +288,12 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     ).subscribe();
   }
 
+  private getUniqueArrByProperty(arr: any[], prop: string): any[] {
+    return [...new Map(arr.map((d: any) =>
+      [d[prop], d])).values()
+    ];
+  }
+
   private getUsersFullDetails(suspiciousUsers: SuspiciousUser[]): void {
     this.dataService.getUsers().pipe(
       first(),
@@ -287,18 +305,21 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     ).subscribe();
   }
 
-  private runAlgorithem(allUsers: SuspiciousUser[], users: SuspiciousUser[]): void {
-    this.algorithem.getSuspiciousCommentsPrecentege(users).pipe(
+  private runAlgorithem(activeUsers: ActiveUser[], users: SuspiciousUser[], dataStartDate: Date, dataEndDate: Date): void {
+    this.algorithem.getSuspiciousCommentsPrecentege(users, dataStartDate, dataEndDate).pipe(
+      filter(num => !isNaN(num)),
       tap(num => this.suspiciousCommentsPrecentege = num),
       finalize(() => this.cdref.detectChanges())
     ).subscribe();
 
-    this.algorithem.getSuspiciousStoriesPrecentege(users).pipe(
+    this.algorithem.getSuspiciousStoriesPrecentege(users, dataStartDate, dataEndDate).pipe(
+      filter(num => !isNaN(num)),
       tap(num => this.suspiciousStoriesPrecentege = num),
       finalize(() => this.cdref.detectChanges())
     ).subscribe();
 
-    this.algorithem.getSuspiciousUsersPrecentege(allUsers, users).pipe(
+    this.algorithem.getSuspiciousUsersPrecentege(activeUsers, users).pipe(
+      filter(num => !isNaN(num)),
       tap(num => this.suspiciousUsersPrecentege = num),
       finalize(() => this.cdref.detectChanges())
     ).subscribe();
@@ -365,9 +386,35 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       }
     }
 
+    this.startupsChartDataTotalCount = Array.from(this.startupsMap.values()).map(a => a.value).reduce((prev, curr) => prev + curr, 0) ?? 0;
     this.startupsChartData[0] = Array.from(this.startupsMap.values()).map(a => a.value);
     this.startupsChartLabels = Array.from(this.startupsMap.keys());
     this.startupsChartColors[0].backgroundColor = Array.from(this.startupsMap.values()).map(a => a.color);
+
+    this.startupsChartPlugins.push({
+      beforeDraw: ((chart: any) => {
+        const ctx = chart.ctx;
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        const centerX = ((chart.chartArea.left + chart.chartArea.right) / 2);
+        const centerY = ((chart.chartArea.top + chart.chartArea.bottom) / 2) - 15;
+
+        ctx.font = '700 18px "Lato", sans-serif';
+        ctx.fillStyle = '#000000';
+
+        ctx.fillText(this.startupsChartDataTotalCount, centerX, centerY);
+
+        ctx.font = '400 14px "Lato", sans-serif';
+        ctx.fillText('Suspicious Users', centerX, centerY + 30);
+      })
+    });
+
+    if (this.startupsChartOptions?.plugins?.datalabels) {
+      this.startupsChartOptions.plugins.datalabels.formatter = (value: any, context: any) => {
+          return +(value * 100 / this.startupsChartDataTotalCount).toFixed(2) + '%';
+      }
+    }
   }
 
   setSuspiciousUsersPerStartupByDateRange(users: SuspiciousUser[]): void {
@@ -378,18 +425,25 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
 
     let startupCountMap = new Map<string, number>(); // date range, count
 
-    for (let i = 1; i <= points; i++) {
+    for (let i = 1; i <= points+1; i++) {
       const fromDate = moment(this.dataStartDate).add(((daysDiff / points) * (i-1)), 'days');
       const toDate = moment(this.dataStartDate).add(((daysDiff / points) * i), 'days');
 
       let usersArrPerRange = users.filter(user => moment(user.identify_date)
-          .isBetween(fromDate, toDate))
+        .isBetween(fromDate, toDate, null, "[]"))
 
       startupCountMap.set(fromDate.format('DD/MM/YY'), usersArrPerRange.length);
     }
 
     this.suspiciousUsersLabels = Array.from(startupCountMap.keys());
+    this.suspiciousUsersDataTotal = this.suspiciousUsersLabels.map(key => startupCountMap.get("" + key)).reduce((prev, acc) => (prev ?? 0) + (acc ?? 0), 0);
     this.suspiciousUsersData[0].data = this.suspiciousUsersLabels.map(key => startupCountMap.get("" + key));
+    
+    if (this.suspiciousUsersOptions?.plugins?.datalabels) {
+      this.suspiciousUsersOptions.plugins.datalabels.formatter = (value: any, context: any) => {
+        return +(value * 100 / this.suspiciousUsersDataTotal).toFixed(2) + '%';
+      }
+    }
   }
 
   private getRandomColor(): string {

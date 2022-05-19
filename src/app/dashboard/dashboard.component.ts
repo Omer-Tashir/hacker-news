@@ -3,6 +3,7 @@ import { fadeInOnEnterAnimation, fadeInRightOnEnterAnimation, fadeOutOnLeaveAnim
 import { AfterViewInit, Component, HostBinding, OnInit } from '@angular/core';
 import { DataService } from '../services/data-service';
 import { FormControl, FormGroup } from '@angular/forms';
+import { map, tap } from 'rxjs/operators';
 
 import * as moment from 'moment/moment';
 
@@ -26,10 +27,10 @@ import * as moment from 'moment/moment';
     ])
   ]
 })
-export class DashboardComponent implements OnInit, AfterViewInit {
+export class DashboardComponent implements OnInit {
 
   dateRange: FormGroup = new FormGroup({
-    start: new FormControl(moment().subtract(1, 'month')),
+    start: new FormControl(moment()),
     end: new FormControl(moment()),
   });
 
@@ -38,10 +39,14 @@ export class DashboardComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit(): void {
-  }
-
-  ngAfterViewInit(): void {
-    
+    this.dataService.getSuspiciousUsers().pipe(
+      map(users => users.map((u: any) => moment(u.identify_date).toDate().getTime()).sort().reverse()),
+      map((dates: any) => dates.filter((d: any) => !isNaN(d))[0]),
+      tap((date: any) => {
+        this.dateRange.controls['end'].setValue(moment(date));
+        this.dateRange.controls['start'].setValue(moment(date).subtract(1, 'month'));
+      }),
+    ).subscribe();
   }
 
   @HostBinding('@fadeInUpAllAnimation')

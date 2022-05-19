@@ -796,7 +796,8 @@ td.mat-cell {
 }
 
 .chartjs-render-monitor {
-  height: 600px !important;
+    width: 100% !important;
+    max-height: 600px !important;
 }
 
 .warning_type {
