@@ -17,11 +17,13 @@
                             
                             <mat-form-field>
                                 <mat-label>Username</mat-label>
-                                <mat-select formControlName="user_id" required>
-                                    <mat-option *ngFor="let user of suspiciousUsers" [value]="user">
-                                        {{user}}
+                                <input type="text" matInput formControlName="user_id" [matAutocomplete]="auto">
+                                <mat-autocomplete #auto="matAutocomplete">
+                                    <mat-option *ngFor="let option of filteredOptions | async" [value]="option">
+                                        {{option}}
                                     </mat-option>
-                                </mat-select>
+                                </mat-autocomplete>
+
                                 <mat-error *ngIf="warningFormHasError('user_id', 'required')">username is required</mat-error>
                             </mat-form-field>
     
@@ -40,44 +42,12 @@
             
                     <button class="submit-btn" mat-raised-button (click)="submit()" color="primary"
                         [disabled]="!!warningForm && !warningForm.valid">
-                        save
+                        Submit
                     </button>
                 </div>
             </section>
             
         </div>
-
-        <!-- <div class="grid">
-
-            <h1>Block user</h1>
-            
-            <section class="blockForm">
-                <div class="inputs-container">
-                    <form [formGroup]="blockForm" autocomplete="new-phone" novalidate fxLayout="column wrap"
-                        fxLayoutAlign="center center" fxLayoutGap="10px">
-            
-                        <div class="form-inputs-wrapper">
-            
-                            <mat-form-field>
-                                <mat-label>Username</mat-label>
-                                <mat-select formControlName="user_id" required>
-                                    <mat-option *ngFor="let user of suspiciousUsers" [value]="user">
-                                        {{user}}
-                                    </mat-option>
-                                </mat-select>
-                                <mat-error *ngIf="blockFormHasError('user_id', 'required')">username is required</mat-error>
-                            </mat-form-field>
-                        </div>
-                    </form>
-            
-                    <button class="submit-btn" mat-raised-button (click)="blockSubmit()" color="primary"
-                        [disabled]="!!blockForm && !blockForm.valid">
-                        save
-                    </button>
-                </div>
-            </section>
-
-        </div> -->
 
 
     </ng-container>

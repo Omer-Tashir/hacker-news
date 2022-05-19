@@ -4,7 +4,7 @@ import { MatSort, Sort } from '@angular/material/sort';
 import { MatTableDataSource } from '@angular/material/table';
 import { fadeInOnEnterAnimation, fadeInRightOnEnterAnimation, fadeOutOnLeaveAnimation, jackInTheBoxOnEnterAnimation } from 'angular-animations';
 import { Observable, Subject } from 'rxjs';
-import { finalize, first, map, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, filter, finalize, first, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { WarningNotification } from '../model/warning-notification';
 import { WarningNotificationType } from '../model/warning-notification-type';
 import { SuspiciousUser } from '../model/suspicious-user';
@@ -32,7 +32,9 @@ export class WarningNotificationsComponent implements OnInit, AfterViewInit, OnD
   isLoading = false;
   //blockForm!: FormGroup;
   warningForm!: FormGroup;
+  filteredOptions!: Observable<string[]>;
   suspiciousUsers$!: Observable<string[]>;
+  suspiciousUsers: string[] = [];
   warningNotificationsTypes: WarningNotificationType[] = [];
 
   constructor(
@@ -86,16 +88,29 @@ export class WarningNotificationsComponent implements OnInit, AfterViewInit, OnD
     this.isLoading = false;
   }
 
+  private _filter(name: string): string[] {
+    const filterValue = name.toLowerCase();
+    return this.suspiciousUsers.filter(option => option.toLowerCase().includes(filterValue));
+  }
+
   ngOnInit() {
     this.initForms();
 
     this.suspiciousUsers$ = this.refresh$.pipe(
       switchMap(() => this.dataService.getWarningNotificationTypes()),
       tap(types => this.warningNotificationsTypes = types),
-      switchMap(() => this.dataService.getSuspiciousUsers()),
-      map(users => Array.from(new Set(users.map(user => user.user_name)))),
+      switchMap(() => this.dataService.getActiveUsers()),
+      map(users => Array.from(new Set(users.map(user => user.user_id)))),
+      tap(users => this.suspiciousUsers = users),
       takeUntil(this.destroy$),
       finalize(() => this.cdref.detectChanges())
+    );
+
+    this.filteredOptions = this.warningForm.controls['user_id'].valueChanges.pipe(
+      filter(value => !!value),
+      debounceTime(300),
+      distinctUntilChanged(),
+      map(name => (name ? this._filter(name) : this.suspiciousUsers.slice())),
     );
   }
 

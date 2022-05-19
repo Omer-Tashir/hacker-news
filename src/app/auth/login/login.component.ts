@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { fadeInOnEnterAnimation } from 'angular-animations';
 import { Ng2ImgMaxService } from 'ng2-img-max';
 import { first } from 'rxjs/operators';
@@ -22,6 +23,7 @@ export class LoginComponent implements OnInit {
   formGroup!: FormGroup;
 
   constructor(
+    private router: Router,
     private authService: AuthService,
     private ng2ImgMax: Ng2ImgMaxService,
     private cdref: ChangeDetectorRef
@@ -64,6 +66,10 @@ export class LoginComponent implements OnInit {
 
     this.formGroup.updateValueAndValidity({ emitEvent: true });
     this.cdref.detectChanges();
+  }
+
+  resetPassword(): void {
+    this.router.navigate(['reset-password']);
   }
 
   onImageChange(event: any) {

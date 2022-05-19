@@ -124,6 +124,8 @@
       <ng-container *ngIf="!newUser">login</ng-container>
       <ng-container *ngIf="newUser">register</ng-container>
       </button>
+
+      <span *ngIf="!newUser" class="reset-password" (click)="resetPassword()">Reset my password</span>
     </div>
 
     <div class="sign-up">
