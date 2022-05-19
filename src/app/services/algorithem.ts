@@ -18,7 +18,7 @@ export class Algorithem {
     ) { }
 
     getSuspiciousUsersPrecentege(activeUsers: ActiveUser[], users: SuspiciousUser[]): Observable<number> {
-        return of((users.length / activeUsers.length) * 100);
+        return of(users.length && activeUsers.length ? (users.length / activeUsers.length) * 100 : 0);
     }
 
     getSuspiciousUsersTrend(users: SuspiciousUser[]): Observable<number> {
@@ -30,10 +30,10 @@ export class Algorithem {
         return this.dataService.getStories().pipe(
             tap((results: Story[]) => {
                 totalStories = results.filter((story: Story) => moment(story.created_date)
-                    .isBetween(moment(dataStartDate), moment(dataEndDate), null, "[]")).length
+                    .isBetween(moment(dataStartDate), moment(dataEndDate), undefined, '[]')).length
             }),
             map((results: Story[]) => results.filter(r => users.map(u => u.user_name).includes(r.user_id))),
-            map((results: Story[]) => (results.length / totalStories) * 100),
+            map((results: Story[]) => totalStories ? (results.length / totalStories) * 100 : 0),
         );
     }
 
@@ -42,10 +42,10 @@ export class Algorithem {
         return this.dataService.getComments().pipe(
             tap((results: Comment[]) => {
                 totalComments = results.filter((comment: Comment) => moment(comment.created_date)
-                    .isBetween(moment(dataStartDate), moment(dataEndDate), null, "[]")).length
+                    .isBetween(moment(dataStartDate), moment(dataEndDate), undefined, '[]')).length
             }),
             map((results: Comment[]) => results.filter(r => users.map(u => u.user_name).includes(r.user_id))),
-            map((results: Comment[]) => (results.length / totalComments) * 100),
+            map((results: Comment[]) => totalComments ? (results.length / totalComments) * 100 : 0),
         );
     }
 }

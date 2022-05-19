@@ -75,8 +75,9 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       titleFontFamily: '"Lato", sans-serif',
       displayColors: false,
       callbacks: {
-        label: (data) => {
-          return data.value + ' Users';
+        label: (tooltip, data) => {          
+          const record = this.startupCountMap.get("" + tooltip.label)
+          return `Active Users: ${record.activeUsers} | Suspicious Users: ${record.suspiciousUsers.length}`;
         }
       }
     },
@@ -162,6 +163,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   suspiciousUsersLabels: Label[] = [];
 
   startupsMap: Map<string, any> = new Map<string, any>();
+  startupCountMap = new Map<string, any>();
   startupsChartLabels: Label[] = [];
   startupsChartData: MultiDataSet = [[]];
   startupsChartType: ChartType = 'doughnut';
@@ -261,18 +263,18 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       tap(data => {
         data[0] = data[0]
           .filter((user: ActiveUser) => moment(user.Created_Date)
-            .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), null, "[]"))
+            .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), undefined, '[]'))
         data[0] = this.getUniqueArrByProperty(data[0], 'user_id');
 
         data[1] = data[1].filter((user: SuspiciousUser) => moment(user.identify_date)
-          .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), null, "[]"))
+          .isBetween(moment(this.dataStartDate), moment(this.dataEndDate), undefined, '[]'))
         data[1] = this.getUniqueArrByProperty(data[1], 'user_name');
       }),
       tap(() => this.cleanCharts()),
       tap((data: any) => this.getUsersFullDetails(data[1])),
       tap((data: any)  => this.setSuspiciousUsersTable(data[1])),
       tap((data: any)  => this.setSuspiciousUsersPerStartup(data[1])),
-      tap((data: any)  => this.setSuspiciousUsersPerStartupByDateRange(data[1])),
+      tap((data: any)  => this.setSuspiciousUsersPerStartupByDateRange(data[1], data[0])),
       tap((data: any) => this.runAlgorithem(data[0], data[1], this.dataStartDate, this.dataEndDate)),
       map(data => data[1]),
     );
@@ -417,31 +419,39 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     }
   }
 
-  setSuspiciousUsersPerStartupByDateRange(users: SuspiciousUser[]): void {
+  setSuspiciousUsersPerStartupByDateRange(users: SuspiciousUser[], activeUsers: ActiveUser[]): void {
     var a = moment(this.dataStartDate);
     var b = moment(this.dataEndDate);
     const daysDiff = Math.abs(b.diff(a, 'days'));
     const points = 12;
 
-    let startupCountMap = new Map<string, number>(); // date range, count
+    this.startupCountMap = new Map<string, any>(); // date range, count
 
-    for (let i = 1; i <= points+1; i++) {
-      const fromDate = moment(this.dataStartDate).add(((daysDiff / points) * (i-1)), 'days');
+    for (let i = 1; i <= points + 1; i++) {
+      const fromDate = moment(this.dataStartDate).add(((daysDiff / points) * (i - 1)), 'days');
       const toDate = moment(this.dataStartDate).add(((daysDiff / points) * i), 'days');
 
-      let usersArrPerRange = users.filter(user => moment(user.identify_date)
-        .isBetween(fromDate, toDate, null, "[]"))
+      let activeUsersPerDate = activeUsers.filter(user => moment(user.Created_Date)
+        .isBetween(fromDate, toDate, undefined, '(]')).length;
 
-      startupCountMap.set(fromDate.format('DD/MM/YY'), usersArrPerRange.length);
+      let usersArrPerRange = users.filter(user => moment(user.identify_date)
+        .isBetween(fromDate, toDate, undefined, '(]'));
+      
+      this.startupCountMap.set(fromDate.format('DD/MM/YY'), {
+        startDate: fromDate.format('DD/MM/YY'),
+        activeUsers: activeUsersPerDate,
+        suspiciousUsers: usersArrPerRange,
+        precent: (usersArrPerRange.length * 100) / activeUsersPerDate
+      });
     }
 
-    this.suspiciousUsersLabels = Array.from(startupCountMap.keys());
-    this.suspiciousUsersDataTotal = this.suspiciousUsersLabels.map(key => startupCountMap.get("" + key)).reduce((prev, acc) => (prev ?? 0) + (acc ?? 0), 0);
-    this.suspiciousUsersData[0].data = this.suspiciousUsersLabels.map(key => startupCountMap.get("" + key));
+    this.suspiciousUsersLabels = Array.from(this.startupCountMap.keys());
+    this.suspiciousUsersDataTotal = this.suspiciousUsersLabels.map(key => this.startupCountMap.get("" + key)).reduce((prev, acc) => (prev ?? 0) + (acc ?? 0), 0);
+    this.suspiciousUsersData[0].data = this.suspiciousUsersLabels.map(key => this.startupCountMap.get("" + key)['precent']);
     
     if (this.suspiciousUsersOptions?.plugins?.datalabels) {
       this.suspiciousUsersOptions.plugins.datalabels.formatter = (value: any, context: any) => {
-        return +(value * 100 / this.suspiciousUsersDataTotal).toFixed(2) + '%';
+        return value ? value.toFixed(2) + '%' : '0%';
       }
     }
   }

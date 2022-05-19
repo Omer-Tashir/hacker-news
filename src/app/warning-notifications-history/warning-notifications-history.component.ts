@@ -27,7 +27,7 @@ export class WarningNotificationsHistoryComponent implements OnInit, AfterViewIn
 
   warningNotifications$!: Observable<any>;
 
-  displayedColumns: string[] = ['id', 'identify_date', 'warning_id', 'user_id'];
+  displayedColumns: string[] = ['user_id', 'identify_date', 'warning_type', 'warning_message'];
   dataSource: MatTableDataSource<WarningNotification> = new MatTableDataSource<WarningNotification>([]);
 
   warningNotificationTypes: WarningNotificationType[] = [];
@@ -65,10 +65,19 @@ export class WarningNotificationsHistoryComponent implements OnInit, AfterViewIn
     }
   }
 
-  getWarning(warning_id: string): string {
+  getWarningType(warning_id: string): string {
     const warning = this.warningNotificationTypes.find(w => w.warning_id == warning_id);
     if (warning) {
-      return `<code class="warning_type">${warning.warning_type}:</code> <code class="warning_text">${warning.warning_text}</code>`;
+      return `<code class="warning_type">${warning.warning_type}</code>`;
+    }
+
+    return warning_id;
+  }
+
+  getWarningMessage(warning_id: string): string {
+    const warning = this.warningNotificationTypes.find(w => w.warning_id == warning_id);
+    if (warning) {
+      return `<code class="warning_text">${warning.warning_text}</code>`;
     }
 
     return warning_id;
@@ -87,6 +96,8 @@ export class WarningNotificationsHistoryComponent implements OnInit, AfterViewIn
         case 'id': return this.compare(a.id, b.id, isAsc);
         case 'identify_date': return this.compare(a.identify_date, b.identify_date, isAsc);
         case 'warning_id': return this.compare(a.warning_id, b.warning_id, isAsc);
+        case 'warning_type': return this.compare(this.getWarningType(a.warning_id), this.getWarningType(b.warning_id), isAsc);
+        case 'warning_message': return this.compare(this.getWarningMessage(a.warning_id), this.getWarningMessage(b.warning_id), isAsc);
         case 'user_id': return this.compare(a.user_id, b.user_id, isAsc);
         default: return 0;
       }

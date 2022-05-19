@@ -10,7 +10,7 @@
                 <h1 class="dashboard-counters__item-count">
                     <span [countUp]="suspiciousUsers.length" [options]="countUpOptionsCounter"></span>
                 </h1>
-                <p class="dashboard-counters__item-description">suspicious users count</p>
+                <p class="dashboard-counters__item-description"># suspicious users</p>
             </div>
         </div>
 
@@ -60,7 +60,7 @@
 
     <div class="dashboard-counters__graphs">
         <div class="dashboard-counters__graph">
-            <h2 class="title">% of suspicious Users per Startup</h2>
+            <h2 class="title">% of suspicious Users Over Time</h2>
     
             <canvas baseChart height="250"
                     [datasets]="suspiciousUsersData"
@@ -112,7 +112,7 @@
 
         </table>
 
-        <mat-paginator [pageSizeOptions]="[10, 25, 50, 100, 250]" aria-label="Select page of users"></mat-paginator>
+        <mat-paginator [pageSizeOptions]="[5, 10, 25, 50, 100, 250]" aria-label="Select page of users"></mat-paginator>
 
     </div>
 
