@@ -1,6 +1,6 @@
 import { Component, OnInit, ChangeDetectionStrategy, ViewChild, EventEmitter, Input, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { MultiDataSet, Label, PluginServiceGlobalRegistrationAndOptions, Color, BaseChartDirective } from 'ng2-charts';
-import { delay, filter, finalize, first, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
+import { debounceTime, delay, distinctUntilChanged, filter, finalize, first, map, startWith, switchMap, takeUntil, tap } from 'rxjs/operators';
 import { ChartDataSets, ChartOptions, ChartType } from 'chart.js';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormGroup } from '@angular/forms';
@@ -170,7 +170,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   startupsChartOptions: ChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    cutoutPercentage: 75,
+    cutoutPercentage: 70,
     tooltips: {
       bodyFontSize: 14,
       titleFontSize: 14,
@@ -280,10 +280,14 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     );
 
     this.dateRange.valueChanges.pipe(
+      debounceTime(100),
+      distinctUntilChanged(),
       tap(date => {
-        this.dataStartDate = date.start.toDate();
-        this.dataEndDate = date.end ? date.end.toDate() : date.start.toDate();
-        this.refresh$.next();
+        if (date.start && date.end) {
+          this.dataStartDate = date.start.toDate();
+          this.dataEndDate = date.end.toDate();
+          this.refresh$.next();
+        }
       }),
       takeUntil(this.destroy$),
       finalize(() => this.cdref.detectChanges())
@@ -291,9 +295,16 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   }
 
   private getUniqueArrByProperty(arr: any[], prop: string): any[] {
-    return [...new Map(arr.map((d: any) =>
-      [d[prop], d])).values()
-    ];
+    var resArr: any[] = [];
+    arr.filter(function(item: any){
+      var i = resArr.findIndex(x => (x[prop] == item[prop]));
+      if(i <= -1){
+            resArr.push(item);
+      }
+      return null;
+    });
+
+    return resArr;
   }
 
   private getUsersFullDetails(suspiciousUsers: SuspiciousUser[]): void {
@@ -423,21 +434,21 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     var a = moment(this.dataStartDate);
     var b = moment(this.dataEndDate);
     const daysDiff = Math.abs(b.diff(a, 'days'));
-    const points = 12;
+    const points = daysDiff > 8 ? 8 : daysDiff;
 
     this.startupCountMap = new Map<string, any>(); // date range, count
 
-    for (let i = 1; i <= points + 1; i++) {
+    for (let i = 1; i <= points; i++) {
       const fromDate = moment(this.dataStartDate).add(((daysDiff / points) * (i - 1)), 'days');
       const toDate = moment(this.dataStartDate).add(((daysDiff / points) * i), 'days');
 
       let activeUsersPerDate = activeUsers.filter(user => moment(user.Created_Date)
-        .isBetween(fromDate, toDate, undefined, '(]')).length;
+        .isBetween(fromDate, toDate, undefined, '[)')).length;
 
       let usersArrPerRange = users.filter(user => moment(user.identify_date)
-        .isBetween(fromDate, toDate, undefined, '(]'));
+        .isBetween(fromDate, toDate, undefined, '[)'));
       
-      this.startupCountMap.set(fromDate.format('DD/MM/YY'), {
+      this.startupCountMap.set(`${fromDate.format('DD/MM/YY')}-${toDate.format('DD/MM/YY')}`, {
         startDate: fromDate.format('DD/MM/YY'),
         activeUsers: activeUsersPerDate,
         suspiciousUsers: usersArrPerRange,

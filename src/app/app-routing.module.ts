@@ -26,7 +26,6 @@ const routes: Routes = [
 export class AppRoutingModule {
   constructor(private router: Router, private authService: AuthService) {
     this.router.errorHandler = (error: any) => {
-      console.log(error);
       this.authService.logout(error);
     };
   }

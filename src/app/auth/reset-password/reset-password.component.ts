@@ -1,7 +1,10 @@
 import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
 import { fadeInOnEnterAnimation } from 'angular-animations';
+import { of } from 'rxjs';
+import { delay, first, map, switchMap } from 'rxjs/operators';
 import { AlertService } from 'src/app/core/alerts/alert.service';
 
 @Component({
@@ -15,6 +18,7 @@ export class ResetPasswordComponent implements OnInit {
   formGroup!: FormGroup;
 
   constructor(
+    private router: Router,
     private http: HttpClient,
     private alert: AlertService,
   ) { }
@@ -32,8 +36,11 @@ export class ResetPasswordComponent implements OnInit {
   submit() {
     this.http.post(`http://localhost/hacker-news/reset_password.php`, {
       username: this.formGroup.controls['username'].value
-    }).subscribe(() => {
-      this.alert.ok('Your password has been reset!', 'Your temp password is: 123456, Please make sure to change it on the next log in');
-    });
+    }).pipe(
+      first(),
+      switchMap(() => of(this.router.navigate(['home']))),
+      delay(100),
+      map(() => this.alert.ok('Your password has been reset!', 'Your temp password is: 123456, Please make sure to change it on the next log in'))
+    ).subscribe();
   }
 }
