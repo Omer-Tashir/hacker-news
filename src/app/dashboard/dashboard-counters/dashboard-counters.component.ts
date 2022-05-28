@@ -4,7 +4,7 @@ import { debounceTime, delay, distinctUntilChanged, filter, finalize, first, map
 import { ChartDataSets, ChartOptions, ChartType } from 'chart.js';
 import { MatTableDataSource } from '@angular/material/table';
 import { FormGroup } from '@angular/forms';
-import { combineLatest, forkJoin, Observable, Subject } from 'rxjs';
+import { combineLatest, forkJoin, merge, Observable, Subject } from 'rxjs';
 
 import * as moment from 'moment/moment';
 import * as pluginDataLabels from 'chartjs-plugin-datalabels';
@@ -364,7 +364,8 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.startupsMap = new Map<string, any>();
     this.suspiciousUsersLabels = [];
     this.suspiciousUsersData[0].data = [];
-    this.suspiciousUsersDataSource.data = [];
+    this.suspiciousUsersDataSource = new MatTableDataSource<SuspiciousUser>([]);
+    this.setDataSourceAttributes();
   }
 
   setSuspiciousUsersTable(users: SuspiciousUser[]): void {
@@ -386,7 +387,7 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     }, new Map()).values()];
 
     // sort users by count of apperance
-    usersCountMap = new Map([...usersCountMap].sort((a, b) => b[1] - a[1]).slice(0, this.paginator?.pageSize));
+    usersCountMap = new Map([...usersCountMap].sort((a, b) => b[1] - a[1]));
 
     let dataSource: SuspiciousUser[] = [];
     for (let username of usersCountMap.keys()) {
@@ -396,7 +397,8 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       }
     }
 
-    this.suspiciousUsersDataSource.data = dataSource;
+    this.suspiciousUsersDataSource = new MatTableDataSource<SuspiciousUser>(dataSource);
+    this.setDataSourceAttributes();
   }
 
   setSuspiciousUsersPerStartup(users: SuspiciousUser[]): void {
