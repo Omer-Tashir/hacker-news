@@ -414,10 +414,6 @@ mat-card {
 }
 
 mat-card.mat-progress-spinner {
-  display: -webkit-box !important;
-  display: -webkit-flex !important;
-  display: -moz-box !important;
-  display: -ms-flexbox !important;
   display: flex !important;
   -webkit-box-align: center;
   -webkit-align-items: center;
@@ -437,7 +433,6 @@ mat-card.mat-progress-spinner {
   box-shadow: none !important;
   border: none !important;
   background: rgba(0, 0, 0, 0.15);
-  height: calc(100vh + 60px) !important;
   z-index: 1;
 }
 

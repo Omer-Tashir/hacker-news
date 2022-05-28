@@ -21,7 +21,7 @@ export class AuthService {
   login(username: string, password: string) {
     this.http.post(`http://localhost/hacker-news/login.php`, {username, password}).subscribe(result => {
       let admin = result as Admin;
-      this.sessionStorageService.setItem('admin', JSON.stringify(admin));
+      this.sessionStorageService.setAdmin(admin);
       this.router.navigate(['']);
     }, error => {
       console.log(error);
@@ -32,7 +32,7 @@ export class AuthService {
   register(admin: any) {
     this.http.post(`http://localhost/hacker-news/create_admin.php`, admin).subscribe(result => {
       let admin = result as Admin;
-      this.sessionStorageService.setItem('admin', JSON.stringify(admin));
+      this.sessionStorageService.setAdmin(admin);
       this.router.navigate(['']);
     }, error => {
       console.log(error);

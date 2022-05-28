@@ -28,7 +28,8 @@ import * as moment from 'moment/moment';
   ]
 })
 export class DashboardComponent implements OnInit {
-
+  dataStartDate!: Date;
+  dataEndDate!: Date;
   dateRange: FormGroup = new FormGroup({
     start: new FormControl(moment()),
     end: new FormControl(moment()),
@@ -39,14 +40,19 @@ export class DashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    this.dataService.getSuspiciousUsers().pipe(
-      map(users => users.map((u: any) => moment(u.identify_date).toDate().getTime()).sort().reverse()),
-      map((dates: any) => dates.filter((d: any) => !isNaN(d))[0]),
-      tap((date: any) => {
-        this.dateRange.controls['end'].setValue(moment(date));
-        this.dateRange.controls['start'].setValue(moment(date).subtract(1, 'month'));
-      }),
-    ).subscribe();
+    this.dataService.getLatestDataDate().subscribe(d => {
+      const date = Object.values(d[0]).map((value: any) => value)[0];
+      this.dateRange.controls['end'].setValue(moment(date));
+      this.dateRange.controls['start'].setValue(moment(date).subtract(1, 'month'));
+      
+      this.dataStartDate = this.dateRange.get('start')?.value.toDate();
+      this.dataEndDate = this.dateRange.get('end')?.value.toDate();
+  
+      this.dataService.getSuspiciousUsers(
+          moment(this.dataStartDate).format('YYYY-MM-DD'),
+          moment(this.dataEndDate).format('YYYY-MM-DD'))
+        .subscribe();
+    });
   }
 
   @HostBinding('@fadeInUpAllAnimation')

@@ -7,6 +7,7 @@ import {
 
 import { AuthService } from '../../auth/auth.service';
 import { Admin } from 'src/app/model/admin';
+import { SessionStorageService } from '../session-storage-service';
 
 @Component({
   selector: 'app-toolbar',
@@ -23,7 +24,8 @@ export class ToolbarComponent implements OnInit {
   image!: string;
 
   constructor(
-    private authService: AuthService
+    private authService: AuthService,
+    private sessionStorageService: SessionStorageService
   ) {}
 
   logout(): void {
@@ -31,9 +33,9 @@ export class ToolbarComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const loadUser = sessionStorage.getItem('admin');
+    const loadUser = this.sessionStorageService.getAdmin();
     if (!!loadUser) {
-      const admin: Admin = JSON.parse(loadUser);
+      const admin: Admin = loadUser;
       this.name = admin.name;
       this.image = admin.photo;
       this.photoLoaded = true;

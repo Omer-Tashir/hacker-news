@@ -1,7 +1,7 @@
 import { HttpClient } from "@angular/common/http";
 import { Injectable } from "@angular/core";
-import { map } from "rxjs/operators";
-import { Observable } from "rxjs";
+import { map, tap } from "rxjs/operators";
+import { Observable, of } from "rxjs";
 
 import { User } from "../model/user";
 import { Story } from "../model/story";
@@ -24,44 +24,44 @@ export class DataService {
 
     getUsers(): Observable<User[]> {
         return this.http.get(`http://localhost/hacker-news/get_users.php`).pipe(
-            map((result: any) => result as User[])
+            map((result: any) => result as User[]),
         );
     }
 
-    getComments(): Observable<Comment[]> {
-        return this.http.get(`http://localhost/hacker-news/get_comments.php`).pipe(
-            map((result: any) => result as Comment[])
+    getComments(dataStartDate: string, dataEndDate: string): Observable<Comment[]> {
+        return this.http.get(`http://localhost/hacker-news/get_comments.php?from=${dataStartDate}&to=${dataEndDate}`).pipe(
+            map((result: any) => result as Comment[]),
         );
     }
     
-    getStories(): Observable<Story[]> {
-        return this.http.get(`http://localhost/hacker-news/get_stories.php`).pipe(
-            map((result: any) => result as Story[])
-        );
+    getStories(dataStartDate: string, dataEndDate: string): Observable<Story[]> {
+        return this.http.get(`http://localhost/hacker-news/get_stories.php?from=${dataStartDate}&to=${dataEndDate}`).pipe(
+                map((result: any) => result as Story[]),
+            );
     }
 
     getCommentStartup(): Observable<CommentStartup[]> {
         return this.http.get(`http://localhost/hacker-news/get_comment_startup.php`).pipe(
-            map((result: any) => result as CommentStartup[])
-        );
+                map((result: any) => result as CommentStartup[]),
+            );
     }
 
     getStoryStartup(): Observable<StoryStartup[]> {
         return this.http.get(`http://localhost/hacker-news/get_story_startup.php`).pipe(
-            map((result: any) => result as StoryStartup[])
-        );
+                map((result: any) => result as StoryStartup[]),
+            );
     }
 
-    getSuspiciousUsers(): Observable<SuspiciousUser[]> {
-        return this.http.get(`http://localhost/hacker-news/get_suspicious_users.php`).pipe(
-            map((result: any) => result as SuspiciousUser[])
-        );
+    getSuspiciousUsers(dataStartDate: string, dataEndDate: string): Observable<SuspiciousUser[]> {
+        return this.http.get(`http://localhost/hacker-news/get_suspicious_users.php?from=${dataStartDate}&to=${dataEndDate}`).pipe(
+                map((result: any) => result as SuspiciousUser[]),
+            );
     }
 
-    getActiveUsers(): Observable<ActiveUser[]> {
-        return this.http.get(`http://localhost/hacker-news/get_active_users.php`).pipe(
-            map((result: any) => result as ActiveUser[])
-        );
+    getActiveUsers(dataStartDate: string, dataEndDate: string): Observable<ActiveUser[]> {
+        return this.http.get(`http://localhost/hacker-news/get_active_users.php?from=${dataStartDate}&to=${dataEndDate}`).pipe(
+                map((result: any) => result as ActiveUser[]),
+            );
     }
 
     getWarningNotifications(): Observable<WarningNotification[]> {
@@ -73,6 +73,12 @@ export class DataService {
     getWarningNotificationTypes(): Observable<WarningNotificationType[]> {
         return this.http.get(`http://localhost/hacker-news/get_warning_notification_types.php`).pipe(
             map((result: any) => result as WarningNotificationType[])
+        );
+    }
+
+    getLatestDataDate() {
+        return this.http.get(`http://localhost/hacker-news/get_last_date.php`).pipe(
+            map((result: any) => result as string)
         );
     }
 }

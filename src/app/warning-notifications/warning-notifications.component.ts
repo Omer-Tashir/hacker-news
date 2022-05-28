@@ -99,7 +99,7 @@ export class WarningNotificationsComponent implements OnInit, AfterViewInit, OnD
     this.suspiciousUsers$ = this.refresh$.pipe(
       switchMap(() => this.dataService.getWarningNotificationTypes()),
       tap(types => this.warningNotificationsTypes = types),
-      switchMap(() => this.dataService.getActiveUsers()),
+      switchMap(() => this.dataService.getUsers()),
       map(users => Array.from(new Set(users.map(user => user.user_id)))),
       tap(users => this.suspiciousUsers = users),
       takeUntil(this.destroy$),

@@ -27,7 +27,7 @@ export class Algorithem {
     
     getSuspiciousStoriesPrecentege(users: SuspiciousUser[], dataStartDate: Date, dataEndDate: Date): Observable<number> {
         let totalStories = 0;
-        return this.dataService.getStories().pipe(
+        return this.dataService.getStories(moment(dataStartDate).format('YYYY-MM-DD'), moment(dataEndDate).format('YYYY-MM-DD')).pipe(
             tap((results: Story[]) => {
                 totalStories = results.filter((story: Story) => moment(story.created_date)
                     .isBetween(moment(dataStartDate), moment(dataEndDate), undefined, '[]')).length
@@ -39,7 +39,7 @@ export class Algorithem {
 
     getSuspiciousCommentsPrecentege(users: SuspiciousUser[], dataStartDate: Date, dataEndDate: Date): Observable<number> {
         let totalComments = 0;
-        return this.dataService.getComments().pipe(
+        return this.dataService.getComments(moment(dataStartDate).format('YYYY-MM-DD'), moment(dataEndDate).format('YYYY-MM-DD')).pipe(
             tap((results: Comment[]) => {
                 totalComments = results.filter((comment: Comment) => moment(comment.created_date)
                     .isBetween(moment(dataStartDate), moment(dataEndDate), undefined, '[]')).length

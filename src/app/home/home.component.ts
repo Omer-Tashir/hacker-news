@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { fadeInOnEnterAnimation, fadeInRightOnEnterAnimation, fadeOutOnLeaveAnimation, jackInTheBoxOnEnterAnimation } from 'angular-animations';
 import { AuthService } from '../auth/auth.service';
+import { SessionStorageService } from '../core/session-storage-service';
 import { Admin } from '../model/admin';
 
 @Component({
@@ -20,7 +21,8 @@ export class HomeComponent implements OnInit {
   image!: string;
 
   constructor(
-    private authService: AuthService
+    private authService: AuthService,
+    private sessionStorageService: SessionStorageService,
   ) { }
 
   logout(): void {
@@ -28,9 +30,9 @@ export class HomeComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    const loadUser = sessionStorage.getItem('admin');
+    const loadUser = this.sessionStorageService.getAdmin();
     if (!!loadUser) {
-      const admin: Admin = JSON.parse(loadUser);
+      const admin: Admin = loadUser;
       this.name = admin.name;
       this.image = admin.photo;
       this.photoLoaded = true;

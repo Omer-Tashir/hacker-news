@@ -41,8 +41,8 @@ export class ProfileComponent implements OnInit {
     private ng2ImgMax: Ng2ImgMaxService,
     private sessionStorageService: SessionStorageService
   ) { 
-    this.admin = JSON.parse(this.sessionStorageService.getItem('admin'));
-    this.sessionUser = JSON.parse(this.sessionStorageService.getItem('admin'));
+    this.admin = this.sessionStorageService.getAdmin();
+    this.sessionUser = this.sessionStorageService.getAdmin();
   }
 
   submit(): void {
@@ -51,7 +51,7 @@ export class ProfileComponent implements OnInit {
       ...this.form.value
     } as Admin;
 
-    this.sessionStorageService.setItem('admin', JSON.stringify(admin));
+    this.sessionStorageService.setAdmin(admin);
 
     this.http.post(`http://localhost/hacker-news/update_admin.php`, admin).pipe(first()).subscribe(() => {
         this.alertService.ok('success', 'your profile has been updated');
@@ -112,7 +112,7 @@ export class ProfileComponent implements OnInit {
     this.route.params.pipe(first()).subscribe(params => {
       if (params.id !== undefined) {
         this.getUserById(params.id).pipe(first()).subscribe((admin: Admin) => {
-          this.admin = admin;
+          this.sessionStorageService.setAdmin(admin);
           this.disabledFlag = true;
           this.initForm();
         });

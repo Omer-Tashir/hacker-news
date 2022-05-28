@@ -5,21 +5,34 @@ import { Injectable } from '@angular/core';
 })
 export class SessionStorageService {
 
-  constructor() { }
+  get_users: any;
+  get_comments: any;
+  get_stories: any;
+  get_comment_startup: any;
+  get_story_startup: any;
+  get_suspicious_users: any;
+  get_active_users: any;
 
-  public setItem(key: string, value: string) {
-    sessionStorage.setItem(key, value);
-  }
-    
-  public getItem(key: string): any { 
-    return sessionStorage.getItem(key);
+  public getAdmin() {
+    if (sessionStorage.getItem('admin')) {
+      const admin: any = sessionStorage.getItem('admin');
+      return JSON.parse(admin);
+    }
+
+    return undefined;
   }
 
-  public removeItem(key:string) {
-    sessionStorage.removeItem(key);
+  public setAdmin(admin: any) {
+    sessionStorage.setItem('admin', JSON.stringify(admin));
   }
 
   public clear() {
-    sessionStorage.clear(); 
+    this.get_users = undefined;
+    this.get_comments = undefined;
+    this.get_stories = undefined;
+    this.get_comment_startup = undefined;
+    this.get_story_startup = undefined;
+    this.get_suspicious_users = undefined;
+    this.get_active_users = undefined;
   }
 }

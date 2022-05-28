@@ -47,10 +47,12 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   dateRange!: FormGroup;
   dataStartDate!: Date;
   dataEndDate!: Date;
+  lastDataDate!: string;
 
   private refresh$ = new Subject<{}>();
   private destroy$ = new Subject<void>();
 
+  isLoading = true;
   userFullDetailsMap = new Map<string, any>();
   suspiciousUsers$!: Observable<any>;
   suspiciousUsersPrecentege: number = 0;
@@ -255,10 +257,16 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.dataStartDate = this.dateRange.get('start')?.value.toDate();
     this.dataEndDate = this.dateRange.get('end')?.value.toDate();
 
+    this.dateRange.valueChanges.pipe(
+      filter(date => !!date.start && !!date.end),
+      tap(() => this.isLoading = true),
+      takeUntil(this.destroy$),
+    ).subscribe();
+
     this.suspiciousUsers$ = this.refresh$.pipe(
       switchMap(() => forkJoin([
-        this.dataService.getActiveUsers(),
-        this.dataService.getSuspiciousUsers()
+        this.dataService.getActiveUsers(moment(this.dataStartDate).format("YYYY-MM-DD"), moment(this.dataEndDate).format("YYYY-MM-DD")),
+        this.dataService.getSuspiciousUsers(moment(this.dataStartDate).format("YYYY-MM-DD"), moment(this.dataEndDate).format("YYYY-MM-DD"))
       ])),
       tap(data => {
         data[0] = data[0]
@@ -276,12 +284,11 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
       tap((data: any)  => this.setSuspiciousUsersPerStartup(data[1])),
       tap((data: any)  => this.setSuspiciousUsersPerStartupByDateRange(data[1], data[0])),
       tap((data: any) => this.runAlgorithem(data[0], data[1], this.dataStartDate, this.dataEndDate)),
-      map(data => data[1]),
+      map(data => data[1])
     );
 
     this.dateRange.valueChanges.pipe(
-      debounceTime(100),
-      distinctUntilChanged(),
+      tap(() => this.cdref.detectChanges()),
       tap(date => {
         if (date.start && date.end) {
           this.dataStartDate = date.start.toDate();
@@ -290,7 +297,9 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
         }
       }),
       takeUntil(this.destroy$),
-      finalize(() => this.cdref.detectChanges())
+      finalize(() => {
+        this.cdref.detectChanges();
+      })
     ).subscribe();
   }
 
@@ -322,19 +331,28 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
     this.algorithem.getSuspiciousCommentsPrecentege(users, dataStartDate, dataEndDate).pipe(
       filter(num => !isNaN(num)),
       tap(num => this.suspiciousCommentsPrecentege = num),
-      finalize(() => this.cdref.detectChanges())
+      finalize(() => {
+        this.isLoading = false;
+        this.cdref.detectChanges();
+      })
     ).subscribe();
 
     this.algorithem.getSuspiciousStoriesPrecentege(users, dataStartDate, dataEndDate).pipe(
       filter(num => !isNaN(num)),
       tap(num => this.suspiciousStoriesPrecentege = num),
-      finalize(() => this.cdref.detectChanges())
+      finalize(() => {
+        this.isLoading = false;
+        this.cdref.detectChanges();
+      })
     ).subscribe();
 
     this.algorithem.getSuspiciousUsersPrecentege(activeUsers, users).pipe(
       filter(num => !isNaN(num)),
       tap(num => this.suspiciousUsersPrecentege = num),
-      finalize(() => this.cdref.detectChanges())
+      finalize(() => {
+        this.isLoading = false;
+        this.cdref.detectChanges();
+      })
     ).subscribe();
   }
 
@@ -474,7 +492,10 @@ export class DashboardCountersComponent implements OnInit, AfterViewInit, OnDest
   ngAfterViewInit(): void {
     this.refresh$.pipe(
       takeUntil(this.destroy$),
-      finalize(() => this.cdref.detectChanges())
+      finalize(() => {
+        this.isLoading = false;
+        this.cdref.detectChanges();
+      })
     ).subscribe();
 
     this.refresh$.next();
